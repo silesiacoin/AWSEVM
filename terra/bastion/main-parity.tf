@@ -135,7 +135,7 @@ sudo curl -Ls "https://github.com/docker/compose/releases/download/1.24.1/docker
 sudo chmod +x /usr/local/bin/docker-compose
 echo "Pull docker images ..."
 sudo docker pull grafana/loki:latest > /dev/null
-sudo docker pull grafana/fluent-plugin-grafana-loki:master > /dev/null
+sudo docker pull grafana/fluent-plugin-loki:master > /dev/null
 echo "Done"
 sudo mkdir -p /opt/prometheus
 sudo mkdir -p /opt/grafana/dashboards
@@ -260,7 +260,7 @@ services:
           - '3100:3100'
       command: -config.file=/etc/loki/local-config.yaml
     fluentd:
-      image: grafana/fluent-plugin-grafana-loki:master
+      image: grafana/fluent-plugin-loki:master
       environment:
         LOKI_URL: http://loki:3100
         LOKI_USERNAME:

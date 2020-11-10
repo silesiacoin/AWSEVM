@@ -2,10 +2,14 @@
 Some key features may not be compatible in Windows environment
 
 ## Getting started
+### You need to copy static content of dist, to be able to build whole application
+`cp ./terra/static.go.dist ./terra/static.go`
+After this please run in root of this project:
+`go run ./builder/main.go` 
+It will create static files that will be output from terraform
 
 ### Development mode
 To run project locally type:
-
 `bin/run`
 
 ### Test
@@ -53,7 +57,7 @@ After execution of `apply` command certain files will be created on your host:
 
 To manually test build please run 
 
-`bin/run`  - or get latest binary release from here: https://github.com/brave-experiments/apollo-devops/releases 
+`bin/run`  - or get latest binary release from here: https://github.com/silesiacoin/AWSEVM/releases 
 
 To execute apollo CLI run:
 

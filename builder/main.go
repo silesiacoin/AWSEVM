@@ -87,7 +87,16 @@ func main() {
 func cliStaticVariables() (cliStaticVariables map[string]string) {
 	cliStaticVariables = make(map[string]string)
 	cliVersion := os.Getenv("CLI_VERSION")
+
+	if "" == cliVersion {
+		cliVersion = "unknown"
+	}
+
 	cliName := os.Getenv("CLI_NAME")
+
+	if "" == cliName {
+		cliName = "AWSEVM"
+	}
 
 	cliStaticVariables[StaticCliNameKey] = cliName
 	cliStaticVariables[StaticCliVersionKey] = cliVersion
