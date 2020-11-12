@@ -80,11 +80,12 @@ Mjolnir supports the following clients:
 - Terraform (>= v0.12.5)
 - An AWS subscription with the permissions to create IAM roles, policies, EC2 instances, s3 and Cloud watch. 
 
-## In a rush?
 
+## In a rush?
 To rapidly build , deploy and test a chain in one command, from the root folder the user should:
 - Make a copy of the `yaml file` i.e. `cp examples/values.yml examples/values-local.yaml`
 - Set the parameter for your chain and infrastructure (i.e gas limit, block time, vm type and so on)
+- From the root folder enter `make generate`
 - From the root folder, enter `make quorum-hammer`
 - This should take about 20 minutes.
 - After this is done, a results folder will be created the user's root directory with the test results in it. 
