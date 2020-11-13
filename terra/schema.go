@@ -116,7 +116,7 @@ var (
 		"c5.24xlarge":   awsInstance{Type: "c5.24xlarge", Memory: "196608", Cpu: "98304"},
 	}
 	ValidInstanceTypes         []string
-	ValidConsensusMechanisms   = []string{"raft", "istanbul"}
+	ValidConsensusMechanisms   = []string{"raft", "istanbul", "aura"}
 	SupportedFileTypes         = []string{".yml", ".yaml"}
 	SupportedResourceTypes     = []string{"variables"}
 	SupportedClockSkewSigns    = []string{"+", "-"}
