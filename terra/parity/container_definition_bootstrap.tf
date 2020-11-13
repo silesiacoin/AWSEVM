@@ -146,8 +146,8 @@ locals {
     "echo $alloc",
     "curl -v https://gist.githubusercontent.com/blazejkrzak/7f6f1289401050393658d08db53db25b/raw/efc8da86608e6be8959d29d4a4f3b42749a4606c/awsevmauthorityround.json -o $specfile",
     "sed -i s'/NAME_REPLACE_MARKER/\"${random_integer.network_id.result}\"/' ${local.genesis_file}",
-    "sed -i 's/LIST_REPLACE_MARKER/\"$validators\"/' ${local.genesis_file}",
-    "sed -i 's/ACCOUNTS_REPLACE_MARKER/\"$alloc\"/' ${local.genesis_file}",
+    "sed -i s/LIST_REPLACE_MARKER/\"$validators\"/ ${local.genesis_file}",
+    "sed -i s/ACCOUNTS_REPLACE_MARKER/\"$alloc\"/ ${local.genesis_file}",
     "echo \"After replacement of genesis file\"",
     "cat ${local.genesis_file}",
 
