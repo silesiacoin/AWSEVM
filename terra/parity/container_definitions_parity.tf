@@ -28,7 +28,7 @@ locals {
     "set -e",
     //"cat ${local.libfaketime_file} > /etc/faketimerc",
     "echo Wait until metadata bootstrap completed ...",
-    "while [ ! -f \"${local.metadata_bootstrap_container_status_file}\" ]; do sleep 1; done",
+    "while [ ! -f \"${local.metadata_bootstrap_container_status_file}\" ]; do sleep 1; done;",
     "${local.parity_config_commands}",
     "echo 'Running parity with: ${local.parity_args_combined}'",
     "parity ${local.parity_args_combined}",
@@ -42,7 +42,7 @@ locals {
       logDriver = "awslogs"
  
         options = {
-         awslogs-group         = "${aws_cloudwatch_log_group.quorum.name}"
+         awslogs-group         = "${aws_cloudwatch_log_group.parity.name}"
          awslogs-region        = "${var.region}"
          awslogs-stream-prefix = "logs"
       }

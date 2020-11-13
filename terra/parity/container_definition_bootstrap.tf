@@ -138,13 +138,13 @@ locals {
     "if [ ${var.consensus_mechanism} == aura ]; then curl https://gist.github.com/blazejkrzak/7f6f1289401050393658d08db53db25b -o ${local.genesis_file}; fi;",
     "list=\"[\"; for f in $(ls ${local.accounts_folder}); do validator=$(cat ${local.accounts_folder}/$f); list=\"$list, \\\"$validator\\\"; done;",
     "list=\"$list]\\\"",
-    "alloc=\"\"; for f in $(ls ${local.accounts_folder}); do address=$(cat ${local.accounts_folder}/$f); alloc=\"$alloc,\\\"$address\\\": { \"balance\": \"\\\"1000000000000000000000000000\\\"\"}\"; done",
+    "alloc=\"\"; for f in $(ls ${local.accounts_folder}); do address=$(cat ${local.accounts_folder}/$f); alloc=\"$alloc,\\\"$address\\\": { \"balance\": \"\\\"1000000000000000000000000000\\\"\"}\"; done;",
     "echo '${replace(jsonencode(local.genesis), "/\"(true|false|[0-9]+)\"/", "$1")}' | jq \". + { alloc : $alloc, list: $list }\" > ${local.genesis_file}",
     "cat ${local.genesis_file}",
 
 
     // Here lays switch for istanbul
-    "if [ ${var.consensus_mechanism} == istanbul]; then curl https://gist.githubusercontent.com/blazejkrzak/61b6e96ddfbb8b8d0a0711371f62b218/raw/546bb588b2897b52a0d11135932848743ebea042/gistfile1.txt -o ${local.genesis_file};",
+    "if [ ${var.consensus_mechanism} == istanbul ]; then curl https://gist.githubusercontent.com/blazejkrzak/61b6e96ddfbb8b8d0a0711371f62b218/raw/546bb588b2897b52a0d11135932848743ebea042/gistfile1.txt -o ${local.genesis_file}; fi;",
     
     //"count=0; while [ -f ${local.genesis_file} ]; do aws s3 cp s3://${local.s3_revision_folder}/config/spec.json ${local.genesis_file} | echo \"Download spec.json \"; done",
     // Change name of the chain
