@@ -131,17 +131,25 @@ locals {
     "echo \"All nodes have registered their keys\"",
 
     // Prepare Genesis file
-
-    //"echo '${replace(jsonencode(local.genesis), "/\"(true|false|[0-9]+)\"/", "$1")}' > ${local.genesis_file}",
-    //"sed -i s'/RANDOM_NETWORK_ID/${random_integer.network_id.result}/' ${local.genesis_file}",
+    "sed -i s'/RANDOM_NETWORK_ID/${random_integer.network_id.result}/' ${local.genesis_file}",
     // Here lays switch for aura consensus engine
     "if [ ${var.consensus_mechanism} == aura ]; then curl https://gist.github.com/blazejkrzak/7f6f1289401050393658d08db53db25b -o ${local.genesis_file}; fi;",
-    "list=\"[\"; for f in $(ls ${local.accounts_folder}); do validator=$(cat ${local.accounts_folder}/$f); list=\"$list, \\\"$validator\\\"; done;",
-    "list=\"$list]\\\"",
-    "alloc=\"\"; for f in $(ls ${local.accounts_folder}); do address=$(cat ${local.accounts_folder}/$f); alloc=\"$alloc,\\\"$address\\\": { \"balance\": \"\\\"1000000000000000000000000000\\\"\"}\"; done;",
-    "echo '${replace(jsonencode(local.genesis), "/\"(true|false|[0-9]+)\"/", "$1")}' | jq \". + { alloc : $alloc, list: $list }\" > ${local.genesis_file}",
+    "if [ ${var.consensus_mechanism} == aura ]; then echo \"Config read is aura config\"; fi;",
+    "validators=[;",
+    "alloc=;",
+    "echo parser loop",
+    "for f in $(ls ${local.accounts_folder}); do validator=$(cat accounts/$f); validators+=\"$validator\",; alloc=$alloc\"$validator\"\": { \"balance\": \"1000000000000000000000000000\" },\"; done;",
+    "validators=$${validators::-1}]",
+    "alloc=$${alloc::-1}",
+    "echo after parser loop",
+    "echo $validators",
+    "echo $alloc",
+    "curl -v https://gist.githubusercontent.com/blazejkrzak/7f6f1289401050393658d08db53db25b/raw/efc8da86608e6be8959d29d4a4f3b42749a4606c/awsevmauthorityround.json -o $specfile",
+    "sed -i s'/NAME_REPLACE_MARKER/\"${random_integer.network_id.result}\"/' ${local.genesis_file}",
+    "sed -i 's/LIST_REPLACE_MARKER/\"$validators\"/' ${local.genesis_file}",
+    "sed -i 's/ACCOUNTS_REPLACE_MARKER/\"$alloc\"/' ${local.genesis_file}",
+    "echo \"After replacement of genesis file\"",
     "cat ${local.genesis_file}",
-
 
     // Here lays switch for istanbul
     "if [ ${var.consensus_mechanism} == istanbul ]; then curl https://gist.githubusercontent.com/blazejkrzak/61b6e96ddfbb8b8d0a0711371f62b218/raw/546bb588b2897b52a0d11135932848743ebea042/gistfile1.txt -o ${local.genesis_file}; fi;",
@@ -150,10 +158,9 @@ locals {
     // Change name of the chain
     "sed -i s/MjolnirTest/${local.chain_name}/ ${local.genesis_file}",
     "sed -i s/AWSEVMAuthorityRound/${local.chain_name}/ ${local.genesis_file}",
-    //"sed -i s/difficulty-value/${var.genesis_difficulty}/ ${local.genesis_file}",
-    //"sed -i s/gasLimit-value/${var.genesis_gas_limit}/ ${local.genesis_file}",
-    //"sed -i s/timestamp-value/${var.genesis_timestamp}/ ${local.genesis_file}",
-    //"sed -i s/networkID-value/${random_integer.network_id.result}/ ${local.genesis_file}",
+    "sed -i s/difficulty-value/${var.genesis_difficulty}/ ${local.genesis_file}",
+    "sed -i s/gasLimit-value/${var.genesis_gas_limit}/ ${local.genesis_file}",
+    "sed -i s/timestamp-value/${var.genesis_timestamp}/ ${local.genesis_file}",
    
     "echo ${local.genesis_file}",
     "cat ${local.genesis_file}",
@@ -209,7 +216,7 @@ locals {
       ]
     }
 
-    entryPoint = [
+    entrypoint = [
       "/bin/sh",
       "-c",
       "${join("\n", local.metadata_bootstrap_commands)}",
