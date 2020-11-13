@@ -135,8 +135,8 @@ locals {
     //"echo '${replace(jsonencode(local.genesis), "/\"(true|false|[0-9]+)\"/", "$1")}' > ${local.genesis_file}",
     //"sed -i s'/RANDOM_NETWORK_ID/${random_integer.network_id.result}/' ${local.genesis_file}",
     // Here lays switch for aura consensus engine
-    "if [ ${var.consensus_mechanism} == aura]; then curl https://gist.github.com/blazejkrzak/7f6f1289401050393658d08db53db25b -o ${local.genesis_file};",
-    "list=\"[\"; for f in $(ls ${local.accounts_folder}; do validator=$(cat ${local.accounts_folder}/$f); list=\"$list, \\\"$validator\\\"; done;",
+    "if [ ${var.consensus_mechanism} == aura ]; then curl https://gist.github.com/blazejkrzak/7f6f1289401050393658d08db53db25b -o ${local.genesis_file}; fi;",
+    "list=\"[\"; for f in $(ls ${local.accounts_folder}); do validator=$(cat ${local.accounts_folder}/$f); list=\"$list, \\\"$validator\\\"; done;",
     "list=\"$list]\\\"",
     "alloc=\"\"; for f in $(ls ${local.accounts_folder}); do address=$(cat ${local.accounts_folder}/$f); alloc=\"$alloc,\\\"$address\\\": { \"balance\": \"\\\"1000000000000000000000000000\\\"\"}\"; done",
     "echo '${replace(jsonencode(local.genesis), "/\"(true|false|[0-9]+)\"/", "$1")}' | jq \". + { alloc : $alloc, list: $list }\" > ${local.genesis_file}",
