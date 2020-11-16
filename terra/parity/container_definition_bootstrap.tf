@@ -111,15 +111,11 @@ locals {
 
     "aws s3 cp ${local.node_info_folder}/${local.normalized_host_ip} s3://${local.s3_revision_folder}/nodeinfo/${local.normalized_host_ip} --sse aws:kms --sse-kms-key-id ${aws_kms_key.bucket.arn}",
     "aws s3 cp ${local.host_ip_file} s3://${local.s3_revision_folder}/hosts/${local.normalized_host_ip} --sse aws:kms --sse-kms-key-id ${aws_kms_key.bucket.arn}",
-   
+
     // Gather all IPs
     "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.hosts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/hosts ${local.hosts_folder} > /dev/null 2>&1 | echo \"Wait for other containers to report their IPs ... $count/${var.number_of_nodes}\"; sleep 1; done",
 
     "echo \"All containers have reported their IPs\"",
-
-    //    TODO: TRY THIS IN POSSIBLE NEXT DEBUG
-    //     Gather all Accounts - register them after spin up in s3 in each node
-    "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.accounts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/accounts ${local.accounts_folder} > /dev/null 2>&1 | echo \"Wait for other nodes to report their accounts ... $count/${var.number_of_nodes}\"; sleep 1; done",
 
     //check if bootnode is first
     "firt_host_ip=$(ls ${local.hosts_folder} | grep ^ip | sort | head -1)",
@@ -135,11 +131,10 @@ locals {
     "count=0; while [ ! -f ${local.parity_current_node_key} ]; do aws s3 cp s3://${local.s3_revision_folder}/keys_json/${local.normalized_host_ip} ${local.parity_current_node_key} > /dev/null 2>&1 | echo \"Wait for download hbbft_validator_key.json ...\"; sleep 1; done",
 
     //    Parse account into address
-    "publicaddr=$(grep -oP '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1)",
+    "publicaddr=$(grep -oe '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1)",
     "echo $publicaddr",
-    "echo 0x$(grep -oP '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1) > ${local.account_address_file}",
+    "echo 0x$(grep -oe '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1) > ${local.account_address_file}",
     "aws s3 cp ${local.account_address_file} s3://${local.s3_revision_folder}/accounts/${local.normalized_host_ip} --sse aws:kms --sse-kms-key-id  ${aws_kms_key.bucket.arn}",
-
 
     // Gather all public keys
     "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.accounts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/accounts ${local.accounts_folder} > /dev/null 2>&1 | echo \"Wait for other containers to report their Accounts ... $count/${var.number_of_nodes}\"; sleep 1; done",
