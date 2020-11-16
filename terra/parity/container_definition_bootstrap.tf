@@ -115,6 +115,10 @@ locals {
 
     "echo \"All containers have reported their IPs\"",
 
+//    TODO: TRY THIS IN POSSIBLE NEXT DEBUG
+////     Gather all Accounts
+//    "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.accounts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/accounts ${local.accounts_folder} > /dev/null 2>&1 | echo \"Wait for other nodes to report their accounts ... $count/${var.number_of_nodes}\"; sleep 1; done",
+
     //check if bootnode is first
     "firt_host_ip=$(ls ${local.hosts_folder} | grep ^ip | sort | head -1)",
     "if [ $firt_host_ip == ${local.normalized_host_ip} ]; then i=0; for f in $(ls ${local.hosts_folder} | grep ^ip | sort); do i=$((i+1)); ip=$(cat ${local.hosts_folder}/$f); sed -i s\"/127.0.0.1:3030$i/$ip:30303/g\" ${local.shared_volume_container_path}/prepare/hbbft_validator_$i.toml; sed -i s\"/^port = 85.*/port = 8545/\" ${local.shared_volume_container_path}/prepare/hbbft_validator_$i.toml;sed -i \"0,/disable/s/disable = true/disable = false/\" ${local.shared_volume_container_path}/prepare/hbbft_validator_$i.toml; sed -i s\"/^port = 303.*/port = 30303/\" ${local.shared_volume_container_path}/prepare/hbbft_validator_$i.toml; sed -i s\"/127.0.0.1:3030$i/$ip:30303/\" ${local.shared_volume_container_path}/prepare/reserved-peers; aws s3 cp ${local.shared_volume_container_path}/prepare/hbbft_validator_$i.toml s3://${local.s3_revision_folder}/config/$f --sse aws:kms --sse-kms-key-id ${aws_kms_key.bucket.arn}; aws s3 cp ${local.shared_volume_container_path}/prepare/hbbft_validator_key_$i s3://${local.s3_revision_folder}/keys/$f --sse aws:kms --sse-kms-key-id  ${aws_kms_key.bucket.arn}; aws s3 cp ${local.shared_volume_container_path}/prepare/hbbft_validator_key_$i.json s3://${local.s3_revision_folder}/keys_json/$f --sse aws:kms --sse-kms-key-id  ${aws_kms_key.bucket.arn} ; aws s3 cp ${local.shared_volume_container_path}/prepare/reserved-peers s3://${local.s3_revision_folder}/config/reserved-peers --sse aws:kms --sse-kms-key-id  ${aws_kms_key.bucket.arn}; done; fi",
@@ -129,21 +133,23 @@ locals {
     "count=0; while [ ! -f ${local.parity_data_dir}/keys/${local.chain_name}/hbbft_validator_key.json ]; do aws s3 cp s3://${local.s3_revision_folder}/keys_json/${local.normalized_host_ip} ${local.parity_data_dir}/keys/${local.chain_name}/hbbft_validator_key.json > /dev/null 2>&1 | echo \"Wait for download hbbft_validator_key.json ...\"; sleep 1; done",
 
     "echo \"All nodes have registered their keys\"",
+    "echo \"Creating ${local.accounts_folder}\"",
+    "mkdir -p ${local.accounts_folder}",
 
     // Prepare Genesis file
     // Here lays switch for aura consensus engine
-    "if [ ${var.consensus_mechanism} == aura ]; then curl https://gist.github.com/blazejkrzak/7f6f1289401050393658d08db53db25b -o ${local.genesis_file}; fi;",
+    "if [ ${var.consensus_mechanism} == aura ]; then curl https://gist.githubusercontent.com/blazejkrzak/7f6f1289401050393658d08db53db25b/raw/efc8da86608e6be8959d29d4a4f3b42749a4606c/awsevmauthorityround.json -o ${local.genesis_file}; fi;",
     "if [ ${var.consensus_mechanism} == aura ]; then echo \"Config read is aura config\"; fi;",
     "validators=[;",
     "alloc=;",
     "echo parser loop",
-    "for f in $(ls ${local.accounts_folder}); do validator=$(cat accounts/$f); validators+=\"$validator\",; alloc=$alloc\"$validator\"\": { \"balance\": \"1000000000000000000000000000\" },\"; done;",
+    "for f in $(ls ${local.accounts_folder}); do validator=$(cat ${local.accounts_folder}/$f); validators+=\"$validator\",; alloc=$alloc\"$validator\"\": { \"balance\": \"1000000000000000000000000000\" },\"; done;",
     "validators=$${validators::-1}]",
     "alloc=$${alloc::-1}",
     "echo after parser loop",
     "echo $validators",
     "echo $alloc",
-    "curl -v https://gist.githubusercontent.com/blazejkrzak/7f6f1289401050393658d08db53db25b/raw/efc8da86608e6be8959d29d4a4f3b42749a4606c/awsevmauthorityround.json -o $specfile",
+    "curl -v https://gist.githubusercontent.com/blazejkrzak/7f6f1289401050393658d08db53db25b/raw/efc8da86608e6be8959d29d4a4f3b42749a4606c/awsevmauthorityround.json -o ${local.genesis_file}",
     "sed -i s'/NAME_REPLACE_MARKER/\"${random_integer.network_id.result}\"/' ${local.genesis_file}",
     "sed -i s/LIST_REPLACE_MARKER/$validators/ ${local.genesis_file}",
     "sed -i s/ACCOUNTS_REPLACE_MARKER/\\\"$alloc\\\"/ ${local.genesis_file}",
