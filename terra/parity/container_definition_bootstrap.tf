@@ -1,14 +1,15 @@
 locals {
-  host_ip_file         = "${local.shared_volume_container_path}/host_ip"
-  task_revision_file   = "${local.shared_volume_container_path}/task_revision"
-  service_file         = "${local.shared_volume_container_path}/service"
+  host_ip_file = "${local.shared_volume_container_path}/host_ip"
+  task_revision_file = "${local.shared_volume_container_path}/task_revision"
+  service_file = "${local.shared_volume_container_path}/service"
   account_address_file = "${local.shared_volume_container_path}/first_account_address"
-  hosts_folder         = "${local.shared_volume_container_path}/hosts"
-  libfaketime_folder   = "${local.shared_volume_container_path}/lib"
-  libfaketime_file     = "${local.shared_volume_container_path}/lib/libfaketime_value"
-  node_info_folder     = "${local.shared_volume_container_path}/nodeinfo"
-  accounts_folder                = "${local.shared_volume_container_path}/accounts"
+  hosts_folder = "${local.shared_volume_container_path}/hosts"
+  libfaketime_folder = "${local.shared_volume_container_path}/lib"
+  libfaketime_file = "${local.shared_volume_container_path}/lib/libfaketime_value"
+  node_info_folder = "${local.shared_volume_container_path}/nodeinfo"
+  accounts_folder = "${local.shared_volume_container_path}/accounts"
   parity_docker_hb_config_generator = "${var.parity_docker_hb_config_generator}"
+  parity_current_node_key = "${local.parity_data_dir}/keys/${local.chain_name}/hbbft_validator_key.json"
 
   metadata_bootstrap_container_status_file = "${local.shared_volume_container_path}/metadata_bootstrap_container_status"
 
@@ -24,23 +25,23 @@ locals {
   ]
 
   node_key_bootstrap_container_definition = {
-    name      = "${local.node_key_bootstrap_container_name}"
-    image     = "${local.parity_docker_hb_config_generator}"
+    name = "${local.node_key_bootstrap_container_name}"
+    image = "${local.parity_docker_hb_config_generator}"
     essential = "false"
 
     logConfiguration = {
       logDriver = "awslogs"
- 
-        options = {
-        awslogs-group         = "${aws_cloudwatch_log_group.parity.name}"
-        awslogs-region        = "${var.region}"
+
+      options = {
+        awslogs-group = "${aws_cloudwatch_log_group.parity.name}"
+        awslogs-region = "${var.region}"
         awslogs-stream-prefix = "logs"
-     }
-   }
+      }
+    }
 
     mountPoints = [
       {
-        sourceVolume  = "${local.shared_volume_name}"
+        sourceVolume = "${local.shared_volume_name}"
         containerPath = "${local.shared_volume_container_path}"
       },
     ]
@@ -52,9 +53,9 @@ locals {
     volumesFrom = []
 
     healthCheck = {
-      interval    = 30
-      retries     = 10
-      timeout     = 60
+      interval = 30
+      retries = 10
+      timeout = 60
       startPeriod = 300
 
       command = [
@@ -100,6 +101,7 @@ locals {
 
     "mkdir -p ${local.parity_data_dir}/network/",
     "mkdir -p ${local.parity_data_dir}/keys/${local.chain_name}",
+    "mkdir -p ${local.accounts_folder}",
 
     "count=0; while [ $count -lt 1 ]; do count=$(ls ${local.libfaketime_folder} | grep libfaketime.so | wc -l); aws s3 cp s3://${local.s3_libfaketime_file} ${local.libfaketime_folder}/libfaketime.so > /dev/null 2>&1 | echo \"Wait for libfaketime to appear on S3 ... \"; sleep 1; done",
     "touch ${local.libfaketime_file}",
@@ -115,9 +117,9 @@ locals {
 
     "echo \"All containers have reported their IPs\"",
 
-//    TODO: TRY THIS IN POSSIBLE NEXT DEBUG
-////     Gather all Accounts
-//    "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.accounts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/accounts ${local.accounts_folder} > /dev/null 2>&1 | echo \"Wait for other nodes to report their accounts ... $count/${var.number_of_nodes}\"; sleep 1; done",
+    //    TODO: TRY THIS IN POSSIBLE NEXT DEBUG
+    //     Gather all Accounts - register them after spin up in s3 in each node
+    "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.accounts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/accounts ${local.accounts_folder} > /dev/null 2>&1 | echo \"Wait for other nodes to report their accounts ... $count/${var.number_of_nodes}\"; sleep 1; done",
 
     //check if bootnode is first
     "firt_host_ip=$(ls ${local.hosts_folder} | grep ^ip | sort | head -1)",
@@ -130,11 +132,18 @@ locals {
 
     // Gather key
     "count=0; while [ ! -f ${local.parity_data_dir}/network/key ]; do aws s3 cp s3://${local.s3_revision_folder}/keys/${local.normalized_host_ip} ${local.parity_data_dir}/network/key > /dev/null 2>&1 | echo \"Wait download key ...\"; sleep 1; done",
-    "count=0; while [ ! -f ${local.parity_data_dir}/keys/${local.chain_name}/hbbft_validator_key.json ]; do aws s3 cp s3://${local.s3_revision_folder}/keys_json/${local.normalized_host_ip} ${local.parity_data_dir}/keys/${local.chain_name}/hbbft_validator_key.json > /dev/null 2>&1 | echo \"Wait for download hbbft_validator_key.json ...\"; sleep 1; done",
+    "count=0; while [ ! -f ${local.parity_current_node_key} ]; do aws s3 cp s3://${local.s3_revision_folder}/keys_json/${local.normalized_host_ip} ${local.parity_current_node_key} > /dev/null 2>&1 | echo \"Wait for download hbbft_validator_key.json ...\"; sleep 1; done",
 
+    //    Parse account into address
+    "publicaddr=$(grep -oP '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1)",
+    "echo $publicaddr",
+    "echo 0x$(grep -oP '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1) > ${local.account_address_file}",
+    "aws s3 cp ${local.account_address_file} s3://${local.s3_revision_folder}/accounts/${local.normalized_host_ip} --sse aws:kms --sse-kms-key-id  ${aws_kms_key.bucket.arn}",
+
+
+    // Gather all public keys
+    "count=0; while [ $count -lt ${var.number_of_nodes} ]; do count=$(ls ${local.accounts_folder} | grep ^ip | wc -l); aws s3 cp --recursive s3://${local.s3_revision_folder}/accounts ${local.accounts_folder} > /dev/null 2>&1 | echo \"Wait for other containers to report their Accounts ... $count/${var.number_of_nodes}\"; sleep 1; done",
     "echo \"All nodes have registered their keys\"",
-    "echo \"Creating ${local.accounts_folder}\"",
-    "mkdir -p ${local.accounts_folder}",
 
     // Prepare Genesis file
     // Here lays switch for aura consensus engine
@@ -159,7 +168,7 @@ locals {
 
     // Here lays switch for istanbul
     "if [ ${var.consensus_mechanism} == istanbul ]; then curl https://gist.githubusercontent.com/blazejkrzak/61b6e96ddfbb8b8d0a0711371f62b218/raw/546bb588b2897b52a0d11135932848743ebea042/gistfile1.txt -o ${local.genesis_file}; fi;",
-    
+
     //"count=0; while [ -f ${local.genesis_file} ]; do aws s3 cp s3://${local.s3_revision_folder}/config/spec.json ${local.genesis_file} | echo \"Download spec.json \"; done",
     // Change name of the chain
     "sed -i s/MjolnirTest/${local.chain_name}/ ${local.genesis_file}",
@@ -167,11 +176,9 @@ locals {
     "sed -i s/difficulty-value/${var.genesis_difficulty}/ ${local.genesis_file}",
     "sed -i s/gasLimit-value/${var.genesis_gas_limit}/ ${local.genesis_file}",
     "sed -i s/timestamp-value/${var.genesis_timestamp}/ ${local.genesis_file}",
-   
+
     "echo ${local.genesis_file}",
     "cat ${local.genesis_file}",
-
-    "aws s3 cp ${local.shared_volume_container_path}/prepare/hbbft_validator_key_1.json s3://${local.s3_revision_folder}/privacyaddresses/${local.normalized_host_ip} --sse aws:kms --sse-kms-key-id ${aws_kms_key.bucket.arn}",
 
     // Write status
     "echo \"Done!\" > ${local.metadata_bootstrap_container_status_file}",
@@ -179,23 +186,23 @@ locals {
   ]
 
   metadata_bootstrap_container_definition = {
-    name      = "${local.metadata_bootstrap_container_name}"
-    image     = "${local.aws_cli_docker_image}"
+    name = "${local.metadata_bootstrap_container_name}"
+    image = "${local.aws_cli_docker_image}"
     essential = "false"
 
     logConfiguration = {
       logDriver = "awslogs"
- 
-        options = {
-         awslogs-group         = "${aws_cloudwatch_log_group.parity.name}"
-         awslogs-region        = "${var.region}"
-         awslogs-stream-prefix = "logs"
+
+      options = {
+        awslogs-group = "${aws_cloudwatch_log_group.parity.name}"
+        awslogs-region = "${var.region}"
+        awslogs-stream-prefix = "logs"
       }
     }
 
     mountPoints = [
       {
-        sourceVolume  = "${local.shared_volume_name}"
+        sourceVolume = "${local.shared_volume_name}"
         containerPath = "${local.shared_volume_container_path}"
       },
     ]
@@ -211,9 +218,9 @@ locals {
     ]
 
     healthCheck = {
-      interval    = 30
-      retries     = 10
-      timeout     = 60
+      interval = 30
+      retries = 10
+      timeout = 60
       startPeriod = 300
 
       command = [
