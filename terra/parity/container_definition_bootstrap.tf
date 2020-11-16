@@ -131,9 +131,9 @@ locals {
     "count=0; while [ ! -f ${local.parity_current_node_key} ]; do aws s3 cp s3://${local.s3_revision_folder}/keys_json/${local.normalized_host_ip} ${local.parity_current_node_key} > /dev/null 2>&1 | echo \"Wait for download hbbft_validator_key.json ...\"; sleep 1; done",
 
     //    Parse account into address
-    "publicaddr=$(grep -oe '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1)",
+    "publicaddr=$(grep -oE '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1)",
     "echo $publicaddr",
-    "echo 0x$(grep -oe '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1) > ${local.account_address_file}",
+    "echo 0x$(grep -oE '[a-fA-F0-9]{40}' ${local.parity_current_node_key} | head -1) > ${local.account_address_file}",
     "aws s3 cp ${local.account_address_file} s3://${local.s3_revision_folder}/accounts/${local.normalized_host_ip} --sse aws:kms --sse-kms-key-id  ${aws_kms_key.bucket.arn}",
 
     // Gather all public keys
@@ -147,7 +147,7 @@ locals {
     "validators=[;",
     "alloc=;",
     "echo parser loop",
-    "for f in $(ls ${local.accounts_folder}); do validator=$(cat ${local.accounts_folder}/$f); validators+=\"$validator\",; alloc=$alloc\"$validator\"\": { \"balance\": \"1000000000000000000000000000\" },\"; done;",
+    "for f in $(ls ${local.accounts_folder}); do validator=$(cat ${local.accounts_folder}/$f); validators+=\"$validator\",; alloc=$alloc\"$validator\": { \"balance\": \"1000000000000000000000000000\" },\"; done;",
     "validators=$${validators::-1}]",
     "alloc=$${alloc::-1}",
     "echo after parser loop",
